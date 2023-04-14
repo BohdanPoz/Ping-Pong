@@ -119,7 +119,6 @@ def run():
                     for button in main_menu.BUTTONS:
                         if button[0].collidepoint(pygame.mouse.get_pos()):
                             button[-2]()
-                            print(1)
             
         elif menu_regim == 1:
             window.fill((50, 50, 50))
