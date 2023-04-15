@@ -1,5 +1,7 @@
 import pygame
 import menu
+import neat, pickle
+from random import randint
 
 pygame.init()
 
@@ -68,7 +70,12 @@ class Platform(pygame.Rect):
             if keys[control_keys[1]] and not self.left <= 0:
                 self.x -= self.STEP
         elif self.CONTROL == 'computor':
-            self.centerx = ball.centerx
+            output_ai = ai.activate((float(self.centery), abs(float(self.centerx) - float(ball.centerx)), float(ball.centery)))
+            decision = output_ai.index(max(output_ai))
+            if decision == 0 and not self.right >= WIDTH:
+                self.x += self.STEP
+            if decision == 2 and not self.left <= 0:
+                self.x -= self.STEP
 
 platform0 = Platform(WIDTH//2-130//2, HEIGHT-40, 130, 30, 5, (200, 0, 0))
 platform1 = Platform(WIDTH//2-130//2, 20, 130, 30, 5, (0, 0, 200), 'computor')
@@ -86,7 +93,7 @@ pause_menu.add_button((400, 100), "Resume", play_b, 75, (200, 0, 0), (0, 0, 200)
 pause_menu.add_button((400, 100), "Restart", restart_b, 75, (200, 0, 0), (0, 0, 200))
 pause_menu.add_button((400, 100), "Main Menu", main_menu_b, 75, (200, 0, 0), (0, 0, 200))
 
-winner_menu = menu.Menu(window, 'Winner', 100, (0, 0, 200), (200, 0, 0))
+winner_menu = menu.Menu(window, 'Game Over', 100, (0, 0, 200), (200, 0, 0))
 winner_menu.add_button((400, 100), "Restart", restart_b, 75, (0, 0, 200), (200, 0, 0))
 winner_menu.add_button((400, 100), "Main Menu", main_menu_b, 75, (0, 0, 200), (200, 0, 0))
 
@@ -98,8 +105,8 @@ def run():
     global menu_regim
     global player_regim
     game = True
-    step_bally = -5
-    step_ballx = 5
+    step_bally = -5 if randint(0, 1) == 0 else 5
+    step_ballx = -5 if randint(0, 1) == 0 else 5
     menu_regim = 0
     player_regim = False
 
@@ -135,7 +142,7 @@ def run():
                         menu_regim = 2
 
             platform0.move(ball)
-            platform1.move(ball)
+            platform1.move(ball, )
             
             ball.y += step_bally
             ball.x += step_ballx
@@ -146,9 +153,9 @@ def run():
                 step_ballx = -step_ballx
 
             if ball.top <= 0:
-                menu_regim = 3
-            elif ball.bottom >= HEIGHT:
                 menu_regim = 4
+            elif ball.bottom >= HEIGHT:
+                menu_regim = 3
 
         elif menu_regim == 2:
             pause_menu.show()
@@ -186,4 +193,15 @@ def run():
         pygame.display.flip()
         clock.tick(FPS)
 
-run()
+def load_genome(config):
+    with open("best.pickle", "rb") as f:
+        winner = pickle.load(f)
+    return winner
+        
+if __name__ == '__main__':
+    config_ai = neat.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, 'config_ai.txt')
+    global ai
+    genome = load_genome(config_ai)
+    ai = neat.nn.FeedForwardNetwork.create(genome, config_ai)
+
+    run()
